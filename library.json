@@ -1,6 +1,6 @@
 {
         "name": "HomieLoggerNode",
-        "version": "0.9.0",
+        "version": "0.9.1",
         "keywords": "Homie, logging, ESP8266",
         "description": "Logging mechanism for Homie-ESP8266",
         "repository": {
@@ -14,6 +14,9 @@
                 {
                         "name": "Homie",
                         "version": "https://github.com/marvinroger/homie-esp8266.git#develop"
-                }
+                },
+		{
+			"name": "Hash"
+		}
         ]
 }
