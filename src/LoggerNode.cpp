@@ -8,20 +8,30 @@
 #include "LoggerNode.h"
 #include <Homie.hpp>
 
-HomieSetting<const char*> LoggerNode::default_loglevel ("loglevel", "default loglevel");  // id, description
+HomieSetting<const char*> LoggerNode::default_loglevel("loglevel", "default loglevel");  // id, description
 
 
 LoggerNode::LoggerNode() :
-		m_loglevel(DEBUG), logSerial(true), HomieNode("Log", "Logger") {
-	//advertise("DefaultLevel").settable();
+		m_loglevel(DEBUG), logSerial(true), HomieNode("Log", "Logger", "Logger") {
 	default_loglevel.setDefaultValue(levelstring[DEBUG].c_str()).setValidator([] (const char* candidate) {
 		return convertToLevel(String(candidate)) != INVALID;
-	});
-	advertise("Level").settable();
-	advertise("LogSerial").settable();
+	});	
+	advertise("Level").settable().setName("Loglevel").setDatatype("enum").setFormat(LoggerNode::getLevelStrings().c_str());
+	advertise("LogSerial").settable().setName("enable/disable log to serial interface").setDatatype("boolean");
 }
 
 const String LoggerNode::levelstring[CRITICAL+1] = { "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" };
+
+const String& LoggerNode::getLevelStrings() {
+	static String* rc = NULL;
+	if (!rc) rc = new String();
+	for (int_fast8_t iLevel = DEBUG; iLevel <= CRITICAL; iLevel++) {
+		rc->concat(levelstring[iLevel]);
+		if (iLevel < CRITICAL)	rc->concat(',');
+	}
+	return *rc;
+
+}
 
 void LoggerNode::setup() {
 	E_Loglevel loglevel = convertToLevel(String(default_loglevel.get()));
@@ -58,7 +68,8 @@ void LoggerNode::logf(const String function, const E_Loglevel level, const char*
 	log(function, level, temp);
 }
 
-bool LoggerNode::handleInput(const String& property, const HomieRange& range,
+
+bool LoggerNode::handleInput(const HomieRange& range, const String& property,
 		const String& value) {
 	LN.logf("LoggerNode::handleInput()", LoggerNode::DEBUG,
 			"property %s set to %s", property.c_str(), property.c_str());
@@ -99,5 +110,3 @@ LoggerNode::E_Loglevel LoggerNode::convertToLevel(const String& level) {
 	return INVALID;
 
 }
-
-LoggerNode LN;

@@ -18,7 +18,7 @@ public:
 	virtual void setup() override;
 	//virtual void loop() override; // loop() not necessary
 	virtual void onReadyToOperate() override;
-	virtual bool handleInput(const String  &property, const HomieRange& range, const String &value) override;
+	virtual bool handleInput(const HomieRange& range, const String  &property, const String &value) override;
 
 	enum E_Loglevel {
 		INVALID=-1, DEBUG=0, INFO, WARNING, ERROR, CRITICAL
@@ -42,7 +42,7 @@ private:
 	static HomieSetting<const char*> default_loglevel;
 
 	static E_Loglevel convertToLevel(const String& level);
-
+	static const String& getLevelStrings();
 
 };
 
