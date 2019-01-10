@@ -43,6 +43,7 @@ void LoggerNode::setup() {
 
 void LoggerNode::onReadyToOperate() {
 	setProperty("Level").send(levelstring[m_loglevel]);
+	setProperty("LogSerial").send(logSerial? "true":"false");
 }
 
 
@@ -52,7 +53,7 @@ void LoggerNode::log(const String function, const E_Loglevel level,	const String
 	mqtt_path.concat('/');
 	mqtt_path.concat(function);
 	if (Homie.isConnected()) {
-		setProperty(mqtt_path).setRetained(false).send(text);
+		setProperty(mqtt_path).send(text);
 	}
 	if (logSerial || !Homie.isConnected()) Serial.printf("%d: %s:%s\n",millis(), mqtt_path.c_str(), text.c_str());
 }
@@ -91,11 +92,11 @@ bool LoggerNode::handleInput(const HomieRange& range, const String& property,
 //			logf(__PRETTY_FUNCTION__, WARNING, "Setting persistent values via MQTT not yet supported by Homie");
 		}
 	} else if (property.equals("LogSerial")) {
-		bool on = value.equalsIgnoreCase("ON");
+		bool on = value.equalsIgnoreCase("ON") || value.equalsIgnoreCase("true");
 		logSerial = on;
 		LN.logf("LoggerNode::handleInput()", LoggerNode::INFO,
 				"Receive command to switch 'Log to serial' %s.", on ? "On" : "Off");
-		setProperty("LogSerial").send(on ? "On" : "Off");
+		setProperty("LogSerial").send(on ? "true" : "false");
 		return true;
 	}
 	logf(__PRETTY_FUNCTION__, ERROR,
