@@ -24,8 +24,8 @@ public:
 		INVALID=-1, DEBUG=0, INFO, WARNING, ERROR, CRITICAL
 	};
 
-	void log(const String function, const E_Loglevel level, const String text) const;
-	void logf(const String function, const E_Loglevel level, const char *format, ...) const;
+	void log(const String& function, const E_Loglevel level, const String& text) const;
+	void logf(const String& function, const E_Loglevel level, const char *format, ...) const;
 
 	bool loglevel(E_Loglevel l) const {
 		return ((uint_fast8_t) l >= (uint_fast8_t) m_loglevel);
@@ -38,6 +38,7 @@ public:
 private:
 	E_Loglevel m_loglevel;
 	bool logSerial;
+	bool logJSON;
 	static const String levelstring[CRITICAL + 1 ];
 	static HomieSetting<const char*> default_loglevel;
 

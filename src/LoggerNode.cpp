@@ -12,10 +12,11 @@ HomieSetting<const char*> LoggerNode::default_loglevel("loglevel", "default logl
 
 
 LoggerNode::LoggerNode() :
-		m_loglevel(DEBUG), logSerial(true), HomieNode("Log", "Logger", "Logger") {
+		HomieNode("Log", "Logger", "Logger"), m_loglevel(DEBUG), logSerial(true), logJSON(true) {
 	default_loglevel.setDefaultValue(levelstring[DEBUG].c_str()).setValidator([] (const char* candidate) {
 		return convertToLevel(String(candidate)) != INVALID;
 	});	
+	advertise("log").setName("actual log output").setDatatype("String");
 	advertise("Level").settable().setName("Loglevel").setDatatype("enum").setFormat(LoggerNode::getLevelStrings().c_str());
 	advertise("LogSerial").settable().setName("enable/disable log to serial interface").setDatatype("boolean");
 }
@@ -38,7 +39,11 @@ void LoggerNode::setup() {
 	if (loglevel == INVALID)
 	{
 		logf("LoggerNode", ERROR, "Invalid Loglevel in config (%s)", default_loglevel.get());
+	} else {
+		m_loglevel = loglevel;
+		logf("LoggerNode", INFO, "Set loglvel to %s [%x]", levelstring[m_loglevel].c_str(), m_loglevel);
 	}
+
 }
 
 void LoggerNode::onReadyToOperate() {
@@ -47,23 +52,36 @@ void LoggerNode::onReadyToOperate() {
 }
 
 
-void LoggerNode::log(const String function, const E_Loglevel level,	const String text) const {
+void LoggerNode::log(const String& function, const E_Loglevel level,	const String& text) const {
 	if (!loglevel(level)) return;
-	String mqtt_path(levelstring[level]);
-	mqtt_path.concat('/');
-	mqtt_path.concat(function);
-	if (Homie.isConnected()) {
-		setProperty(mqtt_path).send(text);
+	String message;
+	String mqtt_path("log");
+	if (logJSON) {
+		message.concat("{\"Level\": \"");
+		message.concat(levelstring[level]);
+		message.concat("\",\"Function\": \"");
+		message.concat(function);
+		message.concat("\",\"Message\": \"");
+		message.concat(text);
+		message.concat("\"}");
+	} else {
+		mqtt_path.concat('/');
+		mqtt_path.concat(levelstring[level]);
+		mqtt_path.concat('/');
+		mqtt_path.concat(function);
+		message = text;
 	}
-	if (logSerial || !Homie.isConnected()) Serial.printf("%d: %s:%s\n",millis(), mqtt_path.c_str(), text.c_str());
+	if (Homie.isConnected()) {
+		setProperty(mqtt_path).send(message);
+	}
+	if (logSerial || !Homie.isConnected()) Serial.printf("%ld [%s]: %s:%s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
 }
 
-void LoggerNode::logf(const String function, const E_Loglevel level, const char* format, ...) const {
+void LoggerNode::logf(const String& function, const E_Loglevel level, const char* format, ...) const {
 	if (!loglevel(level)) return;
 	va_list arg;
 	va_start(arg, format);
 	char temp[100];
-	char* buffer = temp;
 	size_t len = vsnprintf(temp, sizeof(temp), format, arg);
 	va_end(arg);
 	log(function, level, temp);
@@ -73,11 +91,11 @@ void LoggerNode::logf(const String function, const E_Loglevel level, const char*
 bool LoggerNode::handleInput(const HomieRange& range, const String& property,
 		const String& value) {
 	LN.logf("LoggerNode::handleInput()", LoggerNode::DEBUG,
-			"property %s set to %s", property.c_str(), property.c_str());
+			"property %s set to %s", property.c_str(), value.c_str());
 	if (property.equals("Level") /* || property.equals("DefaultLevel") */) {
 		E_Loglevel newLevel = convertToLevel(value);
 		if (newLevel == INVALID) {
-			logf(__PRETTY_FUNCTION__, WARNING , "Receivd invalid level %s.", value.c_str());
+			logf(__PRETTY_FUNCTION__, WARNING , "Received invalid level %s.", value.c_str());
 			return false;
 		}
 		if (property.equals("Level")) {
