@@ -52,26 +52,26 @@ void LoggerNode::onReadyToOperate() {
 }
 
 
-void LoggerNode::log(const String& function, const E_Loglevel level,	const String& text) const {
+void LoggerNode::log(const String& function, const E_Loglevel level, const String& text) const {
 	if (!loglevel(level)) return;
 	String message;
 	String mqtt_path("log");
-	if (logJSON) {
-		message.concat("{\"Level\": \"");
-		message.concat(levelstring[level]);
-		message.concat("\",\"Function\": \"");
-		message.concat(function);
-		message.concat("\",\"Message\": \"");
-		message.concat(text);
-		message.concat("\"}");
-	} else {
-		mqtt_path.concat('/');
-		mqtt_path.concat(levelstring[level]);
-		mqtt_path.concat('/');
-		mqtt_path.concat(function);
-		message = text;
-	}
 	if (Homie.isConnected()) {
+		if (logJSON) {
+			message.concat("{\"Level\": \"");
+			message.concat(levelstring[level]);
+			message.concat("\",\"Function\": \"");
+			message.concat(function);
+			message.concat("\",\"Message\": \"");
+			message.concat(text);
+			message.concat("\"}");
+		} else {
+			mqtt_path.concat('/');
+			mqtt_path.concat(levelstring[level]);
+			mqtt_path.concat('/');
+			mqtt_path.concat(function);
+			message = text;
+		}
 		setProperty(mqtt_path).send(message);
 	}
 	if (logSerial || !Homie.isConnected()) Serial.printf("%ld [%s]: %s:%s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
