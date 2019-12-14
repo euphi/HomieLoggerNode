@@ -41,7 +41,7 @@ void LoggerNode::setup() {
 		logf("LoggerNode", ERROR, "Invalid Loglevel in config (%s)", default_loglevel.get());
 	} else {
 		m_loglevel = loglevel;
-		logf("LoggerNode", INFO, "Set loglvel to %s [%x]", levelstring[m_loglevel].c_str(), m_loglevel);
+		logf("LoggerNode", INFO, "Set loglevel to %s [%x]", levelstring[m_loglevel].c_str(), m_loglevel);
 	}
 
 }
@@ -54,9 +54,9 @@ void LoggerNode::onReadyToOperate() {
 
 void LoggerNode::log(const String& function, const E_Loglevel level, const String& text) const {
 	if (!loglevel(level)) return;
-	String message;
-	String mqtt_path("log");
 	if (Homie.isConnected()) {
+		String message;
+		String mqtt_path("log");
 		if (logJSON) {
 			message.concat("{\"Level\": \"");
 			message.concat(levelstring[level]);
@@ -74,7 +74,7 @@ void LoggerNode::log(const String& function, const E_Loglevel level, const Strin
 		}
 		setProperty(mqtt_path).send(message);
 	}
-	if (logSerial || !Homie.isConnected()) Serial.printf("%ld [%s]: %s:%s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
+	if (logSerial || !Homie.isConnected()) Serial.printf("%ld [%s]: %s: %s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
 }
 
 void LoggerNode::logf(const String& function, const E_Loglevel level, const char* format, ...) const {
