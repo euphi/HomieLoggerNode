@@ -16,9 +16,9 @@ LoggerNode::LoggerNode() :
 	default_loglevel.setDefaultValue(levelstring[DEBUG].c_str()).setValidator([] (const char* candidate) {
 		return convertToLevel(String(candidate)) != INVALID;
 	});	
-	advertise("log").setName("actual log output").setDatatype("String");
+	advertise("log").setName("log output").setDatatype("String");
 	advertise("Level").settable().setName("Loglevel").setDatatype("enum").setFormat(LoggerNode::getLevelStrings().c_str());
-	advertise("LogSerial").settable().setName("enable/disable log to serial interface").setDatatype("boolean");
+	advertise("LogSerial").settable().setName("log to serial interface").setDatatype("boolean");
 }
 
 const String LoggerNode::levelstring[CRITICAL+1] = { "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" };
