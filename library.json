@@ -3,6 +3,14 @@
         "version": "3.0.0",
         "keywords": "Homie, logging, ESP8266",
         "description": "Logging mechanism for Homie-ESP8266",
+        "authors":
+        [
+                {
+                        "name": "Ian Hubbertz",
+                        "url": "https://euphi.github.io",
+                        "maintainer": true
+                }
+        ]
         "repository": {
                 "type": "git",
                 "url": "https://github.com/euphi/HomieLoggerNode.git"
