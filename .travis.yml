@@ -59,7 +59,6 @@ env:
 install:
     - pip install -U platformio
     - platformio lib -g install Homie
-    - platformio lib -g uninstall AsyncTCP 
 
 script:
-    - platformio ci --lib="." examples --board=esp01
+    - platformio ci --project-option="build_flags = -D HOMIE_CONFIG=0" --lib="." examples --board=esp01
