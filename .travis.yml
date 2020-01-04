@@ -58,7 +58,7 @@ env:
 
 install:
     - pip install -U platformio
-    - platformio lib -g install https://github.com/marvinroger/homie-esp8266.git#develop
+    - platformio lib -g install Homie
     - platformio lib -g uninstall AsyncTCP 
 
 script:
