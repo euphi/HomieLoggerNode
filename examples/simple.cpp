@@ -1,6 +1,8 @@
 #include <Homie.h>
 #include <LoggerNode.h>
 
+LoggerNode LN;
+
 void setup() {
   Homie_setFirmware("LoggerNodeExample", "1.0.0");
   Homie.setLoggingPrinter(&Serial);
