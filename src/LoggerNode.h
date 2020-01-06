@@ -41,6 +41,8 @@ private:
 	bool logJSON;
 	static const String levelstring[CRITICAL + 1 ];
 	static HomieSetting<const char*> default_loglevel;
+	static HomieSetting<bool> logserial;
+	static HomieSetting<bool> flushlog;
 
 	static E_Loglevel convertToLevel(const String& level);
 	static const String& getLevelStrings();

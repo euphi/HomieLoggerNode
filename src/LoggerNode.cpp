@@ -9,6 +9,8 @@
 #include <Homie.hpp>
 
 HomieSetting<const char*> LoggerNode::default_loglevel("loglevel", "default loglevel");  // id, description
+HomieSetting<bool> LoggerNode::logserial("logserial", "log to serial");  // id, description
+HomieSetting<bool> LoggerNode::flushlog("flushlog", "Flush serial log after each log");  // id, description
 
 
 LoggerNode::LoggerNode() :
@@ -16,6 +18,8 @@ LoggerNode::LoggerNode() :
 	default_loglevel.setDefaultValue(levelstring[DEBUG].c_str()).setValidator([] (const char* candidate) {
 		return convertToLevel(String(candidate)) != INVALID;
 	});	
+	logserial.setDefaultValue(true);
+	flushlog.setDefaultValue(false);
 	advertise("log").setName("log output").setDatatype("String");
 	advertise("Level").settable().setName("Loglevel").setDatatype("enum").setFormat(LoggerNode::getLevelStrings().c_str());
 	advertise("LogSerial").settable().setName("log to serial interface").setDatatype("boolean");
@@ -28,13 +32,14 @@ const String& LoggerNode::getLevelStrings() {
 	if (!rc) rc = new String();
 	for (int_fast8_t iLevel = DEBUG; iLevel <= CRITICAL; iLevel++) {
 		rc->concat(levelstring[iLevel]);
-		if (iLevel < CRITICAL)	rc->concat(',');
+		if (iLevel < CRITICAL)	rc->concat(':');
 	}
 	return *rc;
 
 }
 
 void LoggerNode::setup() {
+	logSerial = logserial.get();
 	E_Loglevel loglevel = convertToLevel(String(default_loglevel.get()));
 	if (loglevel == INVALID)
 	{
@@ -74,7 +79,10 @@ void LoggerNode::log(const String& function, const E_Loglevel level, const Strin
 		}
 		setProperty(mqtt_path).send(message);
 	}
-	if (logSerial || !Homie.isConnected()) Serial.printf("%ld [%s]: %s: %s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
+	if (logSerial || !Homie.isConnected()) {
+		Serial.printf("%ld [%s]: %s: %s\n",millis(), levelstring[level].c_str(), function.c_str(), text.c_str());
+		if (flushlog.get()) Serial.flush();
+	}
 }
 
 void LoggerNode::logf(const String& function, const E_Loglevel level, const char* format, ...) const {
@@ -88,37 +96,26 @@ void LoggerNode::logf(const String& function, const E_Loglevel level, const char
 }
 
 
-bool LoggerNode::handleInput(const HomieRange& range, const String& property,
-		const String& value) {
-	LN.logf("LoggerNode::handleInput()", LoggerNode::DEBUG,
-			"property %s set to %s", property.c_str(), value.c_str());
+bool LoggerNode::handleInput(const HomieRange& range, const String& property, const String& value) {
+	LN.logf("LoggerNode::handleInput()", LoggerNode::DEBUG,	"property %s set to %s", property.c_str(), value.c_str());
 	if (property.equals("Level") /* || property.equals("DefaultLevel") */) {
 		E_Loglevel newLevel = convertToLevel(value);
 		if (newLevel == INVALID) {
-			logf(__PRETTY_FUNCTION__, WARNING , "Received invalid level %s.", value.c_str());
+			logf("LoggerNode::handleInput()", WARNING , "Received invalid level %s.", value.c_str());
 			return false;
 		}
-		if (property.equals("Level")) {
-			m_loglevel = newLevel;
-			logf(__PRETTY_FUNCTION__, INFO, "New loglevel set to %d", m_loglevel);
-			setProperty("Level").send(levelstring[m_loglevel]);
-			return true;
-//		} else {  // DefaultLevel
-//			//default_loglevel.set(levelstring[newLevel]);
-//			//logf(__PRETTY_FUNCTION__, INFO, "New default loglevel set to %d", newLevel);
-//			//setProperty("DefaultLevel").send(levelstring[newLevel]);
-//			logf(__PRETTY_FUNCTION__, WARNING, "Setting persistent values via MQTT not yet supported by Homie");
-		}
+		m_loglevel = newLevel;
+		logf("LoggerNode::handleInput()", INFO, "New loglevel set to %d", m_loglevel);
+		setProperty("Level").send(levelstring[m_loglevel]);
+		return true;
 	} else if (property.equals("LogSerial")) {
 		bool on = value.equalsIgnoreCase("ON") || value.equalsIgnoreCase("true");
 		logSerial = on;
-		LN.logf("LoggerNode::handleInput()", LoggerNode::INFO,
-				"Receive command to switch 'Log to serial' %s.", on ? "On" : "Off");
+		LN.logf("LoggerNode::handleInput()", LoggerNode::INFO, "Received command to switch 'Log to serial' %s.", on ? "On" : "Off");
 		setProperty("LogSerial").send(on ? "true" : "false");
 		return true;
 	}
-	logf(__PRETTY_FUNCTION__, ERROR,
-			"Received invalid property %s with value %s", property.c_str(),	value.c_str());
+	logf("LoggerNode::handleInput()", ERROR, "Received invalid property %s with value %s", property.c_str(),	value.c_str());
 	return false;
 }
 
@@ -126,6 +123,6 @@ LoggerNode::E_Loglevel LoggerNode::convertToLevel(const String& level) {
 	for (int_fast8_t iLevel = DEBUG; iLevel <= CRITICAL; iLevel++) {
 		if (level.equalsIgnoreCase(levelstring[iLevel])) return static_cast<E_Loglevel>(iLevel);
 	}
-	return INVALID;
+	return DEBUG;
 
 }
